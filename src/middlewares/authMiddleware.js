@@ -3,13 +3,11 @@ import { Admin } from "../models/admin.js";
 import { Staff } from "../models/staff.js";
 import { Customer } from "../models/customer.js";
 
-// Middleware to protect routes and check roles
 export const protect = (roles = []) => {
   if (typeof roles === "string") roles = [roles];
 
   return async (req, res, next) => {
     let token;
-
     if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
       try {
         token = req.headers.authorization.split(" ")[1];
@@ -21,7 +19,11 @@ export const protect = (roles = []) => {
         if (decoded.role === "customer") user = await Customer.findById(decoded.id).select("-password");
 
         if (!user) return res.status(401).json({ message: "Not authorized" });
-        if (roles.length && !roles.includes(decoded.role)) return res.status(403).json({ message: "Access forbidden" });
+
+        // Role check
+        if (roles.length && !roles.includes(decoded.role)) {
+          return res.status(403).json({ message: "Access forbidden" });
+        }
 
         req.user = user;
         next();
